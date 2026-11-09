@@ -1,0 +1,783 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Vocabulary Trainer</title>
+<style>
+* { box-sizing: border-box; }
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f3f5fa;
+    color: #202050;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 750px;
+    margin: auto;
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 5px 25px rgba(0,0,0,.08);
+}
+
+h1, h2 { text-align: center; }
+
+textarea {
+    width: 100%;
+    min-height: 130px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin: 8px 0 15px;
+    font-size: 16px;
+}
+
+button {
+    border: none;
+    border-radius: 8px;
+    padding: 11px 16px;
+    margin: 5px;
+    cursor: pointer;
+    font-size: 15px;
+    background: #202050;
+    color: white;
+}
+
+button:hover { opacity: .88; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+
+.primary { background: #f09010; color: white; }
+.secondary { background: #20b0e0; }
+.success { background: #218838; }
+.danger { background: #c0392b; }
+.light { background: #e9edf5; color: #202050; }
+.home-button { background: #202050; color: white; float: right; }
+
+.hidden { display: none !important; }
+
+.mode-box {
+    background: #f3f5fa;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 15px 0;
+}
+
+.mode-box label {
+    display: block;
+    margin: 10px 0;
+}
+
+#trainingArea {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.word-card {
+    background: #f3f5fa;
+    border-radius: 14px;
+    padding: 25px 15px;
+    margin: 20px 0;
+}
+
+#practiceWord {
+    font-size: 32px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin: 15px 0;
+    overflow-wrap: anywhere;
+}
+
+#arabicMeaning {
+    font-size: 25px;
+    margin: 15px 0;
+    direction: rtl;
+}
+
+#stageTitle {
+    color: #f09010;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+input[type="text"] {
+    width: 100%;
+    max-width: 450px;
+    padding: 14px;
+    font-size: 22px;
+    text-align: center;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    margin: 15px auto;
+}
+
+.correct { color: #16843a; }
+.incorrect { color: #d63031; }
+
+#feedback {
+    min-height: 28px;
+    font-weight: bold;
+    margin: 10px;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.stat {
+    background: #f3f5fa;
+    padding: 15px;
+    border-radius: 10px;
+    min-width: 120px;
+    text-align: center;
+}
+
+.stat strong {
+    display: block;
+    font-size: 24px;
+    color: #f09010;
+}
+
+.word-list {
+    background: #f3f5fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.word-row {
+    padding: 9px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.word-row:last-child { border-bottom: none; }
+
+.word-row span:last-child {
+    direction: rtl;
+    text-align: right;
+}
+
+.section {
+    margin-top: 25px;
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+}
+
+.copy-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+#progress {
+    color: #666;
+    margin: 10px;
+}
+
+@media(max-width: 500px) {
+    .container { padding: 15px; }
+    #practiceWord { font-size: 25px; }
+    .word-row { flex-direction: column; }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>📚 Vocabulary Trainer</h1>
+
+<!-- SETUP -->
+<div id="setupArea">
+    <p>Enter your English words and their Arabic meanings in the same order.</p>
+
+    <label><strong>English Words</strong></label>
+    <textarea id="englishInput" placeholder="Apple&#10;Beautiful&#10;Computer"></textarea>
+
+    <label><strong>Arabic Meanings</strong></label>
+    <textarea id="arabicInput" placeholder="تفاحة&#10;جميل&#10;حاسوب"></textarea>
+
+    <div class="mode-box">
+        <strong>Choose Training Mode:</strong>
+
+        <label>
+            <input type="radio" name="mode" value="practice" checked>
+            Practice Mode — Practice first, then take the tests.
+        </label>
+
+        <label>
+            <input type="radio" name="mode" value="test">
+            Test Mode — Start directly with spelling and memory tests.
+        </label>
+    </div>
+
+    <button class="primary" onclick="startNewSession()">Start Training 🚀</button>
+    <p id="setupError" class="danger"></p>
+</div>
+
+<!-- TRAINING -->
+<div id="trainingArea" class="hidden">
+
+    <button class="home-button" type="button" onclick="endSessionEarly()">🏠 Home / Finish Test</button>
+    <div style="clear: both;"></div>
+    <div id="stageTitle"></div>
+    <div id="progress"></div>
+
+    <div class="stats">
+        <div class="stat">
+            <strong id="completedCount">0</strong>
+            Completed
+        </div>
+        <div class="stat">
+            <strong id="remainingCount">0</strong>
+            Remaining
+        </div>
+        <div class="stat">
+            <strong id="wrongCount">0</strong>
+            Wrong
+        </div>
+    </div>
+
+    <div class="word-card">
+
+        <div id="practiceWord"></div>
+
+        <div id="arabicMeaning"></div>
+
+        <button class="secondary" onclick="speakWord()">🔊 Pronunciation</button>
+
+        <button class="light" id="bookmarkButton" onclick="toggleBookmark()">
+            ☆ Bookmark
+        </button>
+
+        <div>
+            <input
+                type="text"
+                id="answerInput"
+                placeholder="Type the English word..."
+                autocomplete="off"
+                spellcheck="false"
+            >
+        </div>
+
+        <div id="feedback"></div>
+
+        <div id="attemptInfo"></div>
+
+        <button class="primary" id="actionButton" onclick="handleAction()">
+            Check
+        </button>
+
+    </div>
+
+</div>
+
+<!-- SUMMARY -->
+<div id="summaryArea" class="hidden">
+
+    <h2>🎉 Training Summary</h2>
+
+    <div class="stats">
+        <div class="stat">
+            <strong id="finalCompleted">0</strong>
+            Completed
+        </div>
+
+        <div class="stat">
+            <strong id="finalWrong">0</strong>
+            Wrong
+        </div>
+
+        <div class="stat">
+            <strong id="finalTotal">0</strong>
+            Total
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>❌ Words to Practice Again</h3>
+        <div id="wrongList" class="word-list"></div>
+        <button class="primary" id="retrainWrongButton" onclick="retrainWrongWords()">
+            Retrain Wrong Words
+        </button>
+    </div>
+
+    <div class="section">
+        <h3>⭐ Bookmarked Words</h3>
+
+        <div id="bookmarkedList" class="word-list"></div>
+
+        <div class="copy-buttons">
+            <button class="secondary" onclick="copyBookmarkedEnglish()">
+                📋 Copy English Words
+            </button>
+
+            <button class="secondary" onclick="copyBookmarkedArabic()">
+                📋 Copy Arabic Meanings
+            </button>
+        </div>
+
+        <button class="primary" id="testBookmarksButton" onclick="testBookmarkedWords()">
+            Test Bookmarked Words
+        </button>
+    </div>
+
+    <div class="section">
+        <button class="light" onclick="returnToSetup()">Start New Vocabulary List</button>
+    </div>
+
+    <div id="copyFeedback"></div>
+
+</div>
+
+</div>
+
+<script>
+let allWords = [];
+let remainingWords = [];
+let currentWord = null;
+
+let stage = 0;
+let trainingMode = "practice";
+
+let completed = 0;
+let wrongWords = [];
+let bookmarkedWords = [];
+
+let attempts = 0;
+let sessionTotal = 0;
+let nextWordTimer = null;
+
+function parseLines(id) {
+    return document.getElementById(id).value
+        .split(/\r?\n/)
+        .map(x => x.trim())
+        .filter(x => x !== "");
+}
+
+function startNewSession() {
+    const english = parseLines("englishInput");
+    const arabic = parseLines("arabicInput");
+    const error = document.getElementById("setupError");
+
+    error.textContent = "";
+
+    if (english.length === 0 || arabic.length === 0) {
+        error.textContent = "Please enter both English words and Arabic meanings.";
+        return;
+    }
+
+    if (english.length !== arabic.length) {
+        error.textContent = "The number of English words and Arabic meanings must be equal.";
+        return;
+    }
+
+    allWords = english.map((word, index) => ({
+        english: word,
+        arabic: arabic[index]
+    }));
+
+    bookmarkedWords = [];
+
+    trainingMode = document.querySelector('input[name="mode"]:checked').value;
+
+    beginSession(allWords);
+}
+
+function beginSession(words) {
+    clearTimeout(nextWordTimer);
+
+    remainingWords = shuffle([...words]);
+    sessionTotal = words.length;
+
+    completed = 0;
+    wrongWords = [];
+    currentWord = null;
+
+    document.getElementById("setupArea").classList.add("hidden");
+    document.getElementById("summaryArea").classList.add("hidden");
+    document.getElementById("trainingArea").classList.remove("hidden");
+
+    pickNextWord();
+}
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function pickNextWord() {
+    clearTimeout(nextWordTimer);
+
+    if (remainingWords.length === 0) {
+        finishTraining();
+        return;
+    }
+
+    currentWord = remainingWords.pop();
+
+    stage = trainingMode === "practice" ? 0 : 1;
+    attempts = 0;
+
+    document.getElementById("answerInput").value = "";
+    document.getElementById("feedback").textContent = "";
+    document.getElementById("attemptInfo").textContent = "";
+
+    updateScreen();
+}
+
+function updateScreen() {
+    const practiceWord = document.getElementById("practiceWord");
+    const meaning = document.getElementById("arabicMeaning");
+    const input = document.getElementById("answerInput");
+    const button = document.getElementById("actionButton");
+    const title = document.getElementById("stageTitle");
+
+    // Clear all previous-stage content before rendering the new stage.
+    // This also removes any old live spelling feedback from Stage 1.
+    practiceWord.textContent = "";
+    meaning.textContent = "";
+    const feedback = document.getElementById("feedback");
+    feedback.textContent = "";
+    feedback.innerHTML = "";
+    feedback.className = "";
+    feedback.classList.toggle("hidden", stage === 2);
+    document.getElementById("attemptInfo").textContent = "";
+    document.getElementById("attemptInfo").classList.toggle("hidden", stage === 2);
+
+    if (stage === 0) {
+        title.textContent = "Stage 0 — Practice";
+        practiceWord.textContent = currentWord.english;
+        meaning.textContent = currentWord.arabic;
+        button.textContent = "Start Test ➜";
+        input.placeholder = "Practice typing the word...";
+    }
+
+    if (stage === 1) {
+        title.textContent = "Stage 1 — Spelling Test";
+        practiceWord.textContent = "";
+        meaning.textContent = currentWord.arabic;
+        button.textContent = "Continue ➜";
+        input.placeholder = "Spell the English word...";
+    }
+
+    if (stage === 2) {
+        title.textContent = "Stage 2 — Memory Test";
+        practiceWord.textContent = "";
+        meaning.textContent = currentWord.arabic;
+        button.textContent = "Check Answer";
+        input.placeholder = "Write the complete word from memory...";
+    }
+
+    input.value = "";
+    input.disabled = false;
+
+    updateBookmarkButton();
+    updateStats();
+
+    input.focus();
+}
+
+function updateStats() {
+    document.getElementById("completedCount").textContent = completed;
+    document.getElementById("remainingCount").textContent =
+        remainingWords.length + (currentWord ? 1 : 0);
+    document.getElementById("wrongCount").textContent = wrongWords.length;
+
+    document.getElementById("progress").textContent =
+        "Word " + (completed + 1) + " of " + sessionTotal;
+}
+
+function updateLetterFeedback(value) {
+    const target = currentWord.english;
+    const feedback = document.getElementById("feedback");
+
+    let html = "";
+
+    for (let i = 0; i < value.length; i++) {
+        const correct = value[i].toLowerCase() === (target[i] || "").toLowerCase();
+        html += `<span class="${correct ? "correct" : "incorrect"}">${escapeHTML(value[i])}</span>`;
+    }
+
+    feedback.innerHTML = html;
+}
+
+function escapeHTML(value) {
+    return value.replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+document.getElementById("answerInput").addEventListener("input", function() {
+    if (!currentWord || stage === 2) {
+        document.getElementById("feedback").textContent = "";
+        document.getElementById("feedback").innerHTML = "";
+        return;
+    }
+    updateLetterFeedback(this.value);
+});
+
+function handleAction() {
+    if (!currentWord) return;
+
+    const input = document.getElementById("answerInput");
+    const value = input.value.trim();
+    const feedback = document.getElementById("feedback");
+
+    if (stage === 0) {
+        stage = 1;
+        updateScreen();
+        return;
+    }
+
+    if (stage === 1) {
+        if (value.toLowerCase() === currentWord.english.toLowerCase()) {
+            stage = 2;
+            attempts = 0;
+            updateScreen();
+        } else {
+            attempts++;
+
+            if (attempts >= 2) {
+                // After two spelling mistakes, return to Stage 0 for another look.
+                stage = 0;
+                attempts = 0;
+                updateScreen();
+                feedback.classList.remove("hidden");
+                feedback.textContent = "Two incorrect attempts. Review the word, then try the test again.";
+                feedback.className = "incorrect";
+            } else {
+                feedback.textContent = "Incorrect spelling. Try one more time.";
+                feedback.className = "incorrect";
+                document.getElementById("attemptInfo").textContent = "Attempt 1 of 2";
+            }
+        }
+        return;
+    }
+
+    if (stage === 2) {
+        // Stage 2 is a memory-only test: do not show the English word,
+        // typed-letter feedback, or the correct answer anywhere on screen.
+        feedback.textContent = "";
+        feedback.innerHTML = "";
+
+        if (value.toLowerCase() === currentWord.english.toLowerCase()) {
+            completed++;
+            finishCurrentWord();
+        } else {
+            attempts++;
+
+            if (attempts < 2) {
+                document.getElementById("attemptInfo").textContent = "";
+            } else {
+                wrongWords.push(currentWord);
+                finishCurrentWord();
+            }
+        }
+    }
+}
+
+function finishCurrentWord() {
+    document.getElementById("answerInput").disabled = true;
+    updateStats();
+
+    nextWordTimer = setTimeout(pickNextWord, 1200);
+}
+
+// Finish the current session immediately and show the summary.
+function endSessionEarly() {
+    clearTimeout(nextWordTimer);
+
+    // If the current word is still in progress, include it in the retraining list.
+    const input = document.getElementById("answerInput");
+    if (currentWord && !input.disabled) {
+        const alreadyListed = wrongWords.some(word =>
+            word.english === currentWord.english && word.arabic === currentWord.arabic
+        );
+        if (!alreadyListed) wrongWords.push(currentWord);
+    }
+
+    finishTraining();
+}
+
+document.getElementById("answerInput").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        handleAction();
+    }
+});
+
+function speakWord() {
+    if (!currentWord) return;
+
+    if (!("speechSynthesis" in window)) {
+        document.getElementById("feedback").textContent =
+            "Speech is not supported by this browser.";
+        return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(currentWord.english);
+    utterance.lang = "en-US";
+    utterance.rate = 0.85;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    window.speechSynthesis.speak(utterance);
+}
+
+// BOOKMARKS
+
+function isBookmarked(word) {
+    return bookmarkedWords.some(
+        item => item.english === word.english && item.arabic === word.arabic
+    );
+}
+
+function toggleBookmark() {
+    if (!currentWord) return;
+
+    if (isBookmarked(currentWord)) {
+        bookmarkedWords = bookmarkedWords.filter(
+            item => !(item.english === currentWord.english &&
+                      item.arabic === currentWord.arabic)
+        );
+    } else {
+        bookmarkedWords.push(currentWord);
+    }
+
+    updateBookmarkButton();
+}
+
+function updateBookmarkButton() {
+    const button = document.getElementById("bookmarkButton");
+
+    if (currentWord && isBookmarked(currentWord)) {
+        button.textContent = "★ Bookmarked";
+        button.classList.add("primary");
+    } else {
+        button.textContent = "☆ Bookmark";
+        button.classList.remove("primary");
+    }
+}
+
+// SUMMARY
+
+function finishTraining() {
+    clearTimeout(nextWordTimer);
+
+    document.getElementById("trainingArea").classList.add("hidden");
+    document.getElementById("summaryArea").classList.remove("hidden");
+
+    document.getElementById("finalCompleted").textContent = completed;
+    document.getElementById("finalWrong").textContent = wrongWords.length;
+    document.getElementById("finalTotal").textContent = sessionTotal;
+
+    renderWordList("wrongList", wrongWords);
+    renderWordList("bookmarkedList", bookmarkedWords);
+
+    document.getElementById("retrainWrongButton").disabled = wrongWords.length === 0;
+    document.getElementById("testBookmarksButton").disabled = bookmarkedWords.length === 0;
+
+    document.getElementById("copyFeedback").textContent = "";
+    currentWord = null;
+}
+
+function renderWordList(elementId, words) {
+    const element = document.getElementById(elementId);
+
+    if (words.length === 0) {
+        element.textContent = "No words in this list.";
+        return;
+    }
+
+    element.innerHTML = words.map(word => `
+        <div class="word-row">
+            <span>${escapeHTML(word.english)}</span>
+            <span>${escapeHTML(word.arabic)}</span>
+        </div>
+    `).join("");
+}
+
+function retrainWrongWords() {
+    if (wrongWords.length === 0) return;
+    beginSession([...wrongWords]);
+}
+
+function testBookmarkedWords() {
+    if (bookmarkedWords.length === 0) return;
+    beginSession([...bookmarkedWords]);
+}
+
+// COPY BOOKMARKED WORDS
+
+async function copyText(text) {
+    if (!text) {
+        document.getElementById("copyFeedback").textContent =
+            "There are no bookmarked words to copy.";
+        return;
+    }
+
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            const copied = document.execCommand("copy");
+            textarea.remove();
+
+            if (!copied) throw new Error("Copy failed");
+        }
+
+        document.getElementById("copyFeedback").textContent = "Copied successfully! ✓";
+    } catch (error) {
+        document.getElementById("copyFeedback").textContent =
+            "Copy was not available. Please select and copy the words manually.";
+    }
+}
+
+function copyBookmarkedEnglish() {
+    const text = bookmarkedWords.map(word => word.english).join("\n");
+    copyText(text);
+}
+
+function copyBookmarkedArabic() {
+    const text = bookmarkedWords.map(word => word.arabic).join("\n");
+    copyText(text);
+}
+
+function returnToSetup() {
+    clearTimeout(nextWordTimer);
+
+    document.getElementById("summaryArea").classList.add("hidden");
+    document.getElementById("setupArea").classList.remove("hidden");
+    document.getElementById("setupError").textContent = "";
+}
+</script>
+
+</body>
+</html>
